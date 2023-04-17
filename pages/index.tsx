@@ -1,11 +1,13 @@
 import * as React from 'react';
 
 import { Container, useTheme } from '@mui/joy';
+import { Socket } from 'socket.io-client';
 
 import { Chat } from '@/components/Chat';
 import { NoSSR } from '@/components/util/NoSSR';
-import { isValidOpenAIApiKey, SettingsModal } from '@/components/dialogs/SettingsModal';
+import { SettingsModal } from '@/components/dialogs/SettingsModal';
 import { useSettingsStore } from '@/lib/store-settings';
+import SocketContext from '../contexts/socket-context';
 
 
 export default function Home() {
@@ -14,15 +16,44 @@ export default function Home() {
 
   // external state
   const theme = useTheme();
-  const apiKey = useSettingsStore(state => state.apiKey);
+  const productKey = useSettingsStore(state => state.productKey);
   const centerMode = useSettingsStore(state => state.centerMode);
+
+  // web socket to communicate with backend server
+  const socket = React.useContext(SocketContext) as Socket | null
 
 
   // show the Settings Dialog at startup if the API key is required but not set
   React.useEffect(() => {
-    if (!!process.env.REQUIRE_USER_API_KEYS && !isValidOpenAIApiKey(apiKey))
+    console.log("Extracted Product Key from local storage: " + productKey);
+    if (socket === null) {
+      console.log("Socket is null");
+      return;
+    }
+    socket.on('keyValidationResult', (isValid) => {
+      console.log("[ws] Received key validation result: " + isValid);
+      if (!isValid) {
+        setSettingsShown(true);
+      }
+    });
+    socket.on("connect", () => {
+      console.log("[ws] Connected to the WebSocket server");
+    });
+
+    socket.on("disconnect", () => {
+      console.log("[ws] Disconnected from the WebSocket server");
+    });
+
+    socket.on("error", (error) => {
+      console.log("[ws] error:", error);
+    });
+    if (productKey) {
+      socket.emit('validateProductKey', productKey);
+    } else {
       setSettingsShown(true);
-  }, [apiKey]);
+    }
+
+  }, [productKey, socket]);
 
 
   return (

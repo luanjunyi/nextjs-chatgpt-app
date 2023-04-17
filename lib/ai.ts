@@ -3,14 +3,34 @@ import { DMessage, useChatStore } from '@/lib/store-chats';
 import { fastChatModelId } from '@/lib/data';
 import { useSettingsStore } from '@/lib/store-settings';
 
+/**
+ * Main function to send the chat to the assistant and receive a response (non-streaming) 
+ */
+export async function AssistantMessage(
+  conversationId: string,
+  assistantMessageId: string,
+  history: DMessage[],
+  chatModelId: string,
+  editMessage: (conversationId: string, messageId: string, updatedMessage: Partial<DMessage>, touch: boolean) => void,
+  abortSignal: AbortSignal,
+) {
+  editMessage(conversationId, assistantMessageId, { text: "<placeholder for real response>" }, true);
+}
+
 
 /**
  * Main function to send the chat to the assistant and receive a response (streaming)
  */
 export async function streamAssistantMessage(
-  conversationId: string, assistantMessageId: string, history: DMessage[],
-  apiKey: string | undefined, apiHost: string | undefined, apiOrganizationId: string | undefined,
-  chatModelId: string, modelTemperature: number, modelMaxResponseTokens: number,
+  conversationId: string,
+  assistantMessageId: string,
+  history: DMessage[],
+  apiKey: string | undefined,
+  apiHost: string | undefined,
+  apiOrganizationId: string | undefined,
+  chatModelId: string,
+  modelTemperature: number,
+  modelMaxResponseTokens: number,
   editMessage: (conversationId: string, messageId: string, updatedMessage: Partial<DMessage>, touch: boolean) => void,
   abortSignal: AbortSignal,
 ) {

@@ -63,6 +63,7 @@ export function SettingsModal({ open, onClose }: { open: boolean, onClose: () =>
     zenMode, setZenMode,
     apiKey, setApiKey,
     apiHost, setApiHost,
+    productKey, setProductKey,
     apiOrganizationId, setApiOrganizationId,
     modelTemperature, setModelTemperature,
     modelMaxResponseTokens,
@@ -77,9 +78,15 @@ export function SettingsModal({ open, onClose }: { open: boolean, onClose: () =>
 
   const handleZenModeChange = (event: React.ChangeEvent<HTMLInputElement>) => setZenMode(event.target.value as 'clean' | 'cleaner');
 
-  const handleApiKeyChange = (e: React.ChangeEvent) => setApiKey((e.target as HTMLInputElement).value);
+  const handleProductKeyChange = (e: React.ChangeEvent) => {
+    setProductKey((e.target as HTMLInputElement).value);
+  };
 
-  const handleApiKeyDown = (e: React.KeyboardEvent) => (e.key === 'Enter') && onClose();
+  const handleProductKeyDown = (e: React.KeyboardEvent) => (e.key === 'Enter') && onClose();
+
+  const handleProductKeyInputFinish = () => {
+    console.log('product key is changed');
+  }
 
   const handleApiHostChange = (e: React.ChangeEvent) => setApiHost((e.target as HTMLInputElement).value);
 
@@ -101,16 +108,15 @@ export function SettingsModal({ open, onClose }: { open: boolean, onClose: () =>
 
         <Typography level='h5' sx={{ mb: 2 }}>Settings</Typography>
 
-
         <Section>
-
           <FormControl>
             <FormLabel>
-              OpenAI API Key {needsApiKey ? '' : '(optional)'}
+              Product Key
             </FormLabel>
             <Input
-              variant='outlined' type='password' placeholder={needsApiKey ? 'required' : 'sk-...'} error={needsApiKey && !isValidKey}
-              value={apiKey} onChange={handleApiKeyChange} onKeyDown={handleApiKeyDown}
+              variant='outlined' type='text' placeholder='required'
+              value={productKey} onChange={handleProductKeyChange} onKeyDown={handleProductKeyDown}
+              onBlur={handleProductKeyInputFinish}
               startDecorator={<KeyIcon />}
             />
             <FormHelperText sx={{ display: 'block', lineHeight: 1.75 }}>
@@ -157,8 +163,8 @@ export function SettingsModal({ open, onClose }: { open: boolean, onClose: () =>
                 <FormHelperText>{renderMarkdown ? 'Render markdown' : 'Text only'}</FormHelperText>
               </Box>
               <Switch checked={renderMarkdown} onChange={handleRenderMarkdownChange}
-                      endDecorator={renderMarkdown ? 'On' : 'Off'}
-                      slotProps={{ endDecorator: { sx: { minWidth: 26 } } }} />
+                endDecorator={renderMarkdown ? 'On' : 'Off'}
+                slotProps={{ endDecorator: { sx: { minWidth: 26 } } }} />
             </FormControl>
 
             <FormControl orientation='horizontal' sx={{ justifyContent: 'space-between' }}>
@@ -167,8 +173,8 @@ export function SettingsModal({ open, onClose }: { open: boolean, onClose: () =>
                 <FormHelperText>{showPurposeFinder ? 'Show search bar' : 'Hide search bar'}</FormHelperText>
               </Box>
               <Switch checked={showPurposeFinder} onChange={handleShowSearchBarChange}
-                      endDecorator={showPurposeFinder ? 'On' : 'Off'}
-                      slotProps={{ endDecorator: { sx: { minWidth: 26 } } }} />
+                endDecorator={showPurposeFinder ? 'On' : 'Off'}
+                slotProps={{ endDecorator: { sx: { minWidth: 26 } } }} />
             </FormControl>
 
           </Stack>

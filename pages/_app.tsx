@@ -4,6 +4,8 @@ import { Analytics as VercelAnalytics } from '@vercel/analytics/react';
 import { AppProps } from 'next/app';
 import { CacheProvider, EmotionCache } from '@emotion/react';
 import { CssBaseline, CssVarsProvider } from '@mui/joy';
+import { SocketProvider } from '../contexts/socket-context';
+import { io as SocketClient, Socket } from 'socket.io-client';
 
 import { createEmotionCache, theme } from '@/lib/theme';
 import '../styles/GithubMarkdown.css';
@@ -17,6 +19,25 @@ export interface MyAppProps extends AppProps {
 }
 
 export default function MyApp({ Component, emotionCache = clientSideEmotionCache, pageProps }: MyAppProps) {
+  const [socket, setSocket] = React.useState<Socket | null>(null);
+
+  React.useEffect(() => {
+    function getWebSocketUrl() {
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const hostname = window.location.hostname;
+      const port = 2023;
+      const wsUrl = `${protocol}//${hostname}:${port}`;
+      return wsUrl;
+    }
+    const wsURL = getWebSocketUrl();
+    const socketInstance = SocketClient(wsURL);
+    setSocket(socketInstance);
+
+    return () => {
+      socketInstance.disconnect();
+    };
+  }, []);
+
   return <>
     <CacheProvider value={emotionCache}>
       <Head>
@@ -25,7 +46,10 @@ export default function MyApp({ Component, emotionCache = clientSideEmotionCache
       <CssVarsProvider defaultMode='light' theme={theme}>
         {/* CssBaseline kickstart an elegant, consistent, and simple baseline to build upon. */}
         <CssBaseline />
-        <Component {...pageProps} />
+        <SocketProvider socket={socket}>
+          <Component {...pageProps} />
+        </SocketProvider>
+
       </CssVarsProvider>
     </CacheProvider>
     <VercelAnalytics debug={false} />

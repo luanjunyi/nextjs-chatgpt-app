@@ -31,6 +31,9 @@ interface SettingsStore {
   apiKey: string;
   setApiKey: (apiKey: string) => void;
 
+  productKey: string;
+  setProductKey: (productKey: string) => void;
+
   apiHost: string;
   setApiHost: (apiHost: string) => void;
 
@@ -67,12 +70,18 @@ export const useSettingsStore = create<SettingsStore>()(
       zenMode: 'clean',
       setZenMode: (zenMode: 'clean' | 'cleaner') => set({ zenMode }),
 
-      apiKey: (function() {
+      apiKey: (function () {
         // this will be removed in April
         if (typeof localStorage === 'undefined') return '';
         return localStorage.getItem('app-settings-openai-api-key') || '';
       })(),
       setApiKey: (apiKey: string) => set({ apiKey }),
+
+      productKey: (function () {
+        if (typeof localStorage === 'undefined') return '';
+        return localStorage.getItem('app-settings-product-key') || '';
+      })(),
+      setProductKey: (productKey: string) => set({ productKey }),
 
       apiHost: '',
       setApiHost: (apiHost: string) => set({ apiHost }),
@@ -107,28 +116,28 @@ interface ComposerStore {
 
 export const useComposerStore = create<ComposerStore>()(
   persist((set, get) => ({
-      history: [],
+    history: [],
 
-      appendMessageToHistory: (text: string) => {
-        const date = Date.now();
-        const history = [...(get().history || [])];
+    appendMessageToHistory: (text: string) => {
+      const date = Date.now();
+      const history = [...(get().history || [])];
 
-        // take the item from the array, matching by text
-        let item = history.find((item) => item.text === text);
-        if (item) {
-          history.splice(history.indexOf(item), 1);
-          item.date = date;
-          item.count++;
-        } else
-          item = { date, text, count: 1 };
+      // take the item from the array, matching by text
+      let item = history.find((item) => item.text === text);
+      if (item) {
+        history.splice(history.indexOf(item), 1);
+        item.date = date;
+        item.count++;
+      } else
+        item = { date, text, count: 1 };
 
-        // prepend the item to the history array
-        history.unshift(item);
+      // prepend the item to the history array
+      history.unshift(item);
 
-        // update the store (limiting max items)
-        set({ history: history.slice(0, 20) });
-      },
-    }),
+      // update the store (limiting max items)
+      set({ history: history.slice(0, 20) });
+    },
+  }),
     {
       name: 'app-composer',
     }),

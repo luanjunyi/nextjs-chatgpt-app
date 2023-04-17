@@ -14,7 +14,7 @@ import { Link } from '@/components/util/Link';
 import { PublishedModal } from '@/components/dialogs/PublishedModal';
 import { createDMessage, DMessage, downloadConversationJson, useChatStore } from '@/lib/store-chats';
 import { publishConversation } from '@/lib/publish';
-import { streamAssistantMessage, updateAutoConversationTitle } from '@/lib/ai';
+import { AssistantMessage, streamAssistantMessage, updateAutoConversationTitle } from '@/lib/ai';
 import { useSettingsStore } from '@/lib/store-settings';
 
 
@@ -57,13 +57,16 @@ const runAssistantUpdatingState = async (conversationId: string, history: DMessa
   startTyping(conversationId, controller);
 
   const { apiKey, apiHost, apiOrganizationId, modelTemperature, modelMaxResponseTokens } = useSettingsStore.getState();
-  await streamAssistantMessage(conversationId, assistantMessageId, history, apiKey, apiHost, apiOrganizationId, assistantModel, modelTemperature, modelMaxResponseTokens, editMessage, controller.signal);
+
+  //await streamAssistantMessage(conversationId, assistantMessageId, history, 
+  //  apiKey, apiHost, apiOrganizationId, assistantModel, modelTemperature, modelMaxResponseTokens, editMessage, controller.signal);
+  AssistantMessage(conversationId, assistantMessageId, history, assistantModel, editMessage, controller.signal);
 
   // clear to send, again
   startTyping(conversationId, null);
 
   // update text, if needed
-  await updateAutoConversationTitle(conversationId);
+  //await updateAutoConversationTitle(conversationId);
 };
 
 
@@ -153,6 +156,7 @@ export function Chat(props: { onShowSettings: () => void, sx?: SxProps }) {
           position: 'sticky', bottom: 0, zIndex: 21,
           background: theme.vars.palette.background.surface,
           borderTop: `1px solid ${theme.vars.palette.divider}`,
+          background_color: 'blue',
           p: { xs: 1, md: 2 },
         }} />
 
