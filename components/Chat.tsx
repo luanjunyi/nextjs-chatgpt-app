@@ -3,6 +3,7 @@ import { shallow } from 'zustand/shallow';
 
 import { Box, useTheme } from '@mui/joy';
 import { SxProps } from '@mui/joy/styles/types';
+import { Socket } from 'socket.io-client';
 
 import { ApiPublishResponse } from '../pages/api/publish';
 import { ApplicationBar } from '@/components/ApplicationBar';
@@ -16,12 +17,13 @@ import { createDMessage, DMessage, downloadConversationJson, useChatStore } from
 import { publishConversation } from '@/lib/publish';
 import { AssistantMessage, streamAssistantMessage, updateAutoConversationTitle } from '@/lib/ai';
 import { useSettingsStore } from '@/lib/store-settings';
+import SocketContext from '../contexts/socket-context';
 
 
 /**
  * The main "chat" function. TODO: this is here so we can soon move it to the data model.
  */
-const runAssistantUpdatingState = async (conversationId: string, history: DMessage[], assistantModel: ChatModelId, assistantPurpose: SystemPurposeId) => {
+const runAssistantUpdatingState = async (socket: Socket, conversationId: string, history: DMessage[], assistantModel: ChatModelId, assistantPurpose: SystemPurposeId) => {
 
   // reference the state editing functions
   const { startTyping, appendMessage, editMessage, setMessages } = useChatStore.getState();
@@ -45,25 +47,24 @@ const runAssistantUpdatingState = async (conversationId: string, history: DMessa
   let assistantMessageId: string;
   {
     const assistantMessage: DMessage = createDMessage('assistant', '...');
-    assistantMessage.typing = true;
+    assistantMessage.typing = false;
     assistantMessage.purposeId = history[0].purposeId;
     assistantMessage.originLLM = assistantModel;
     appendMessage(conversationId, assistantMessage);
     assistantMessageId = assistantMessage.id;
   }
 
-  // when an abort controller is set, the UI switches to the "stop" mode
-  const controller = new AbortController();
-  startTyping(conversationId, controller);
+  const historyToServer = history.map(({ role, text }) => ({
+    role: role,
+    content: text,
+  }));
 
-  const { apiKey, apiHost, apiOrganizationId, modelTemperature, modelMaxResponseTokens } = useSettingsStore.getState();
-
-  //await streamAssistantMessage(conversationId, assistantMessageId, history, 
-  //  apiKey, apiHost, apiOrganizationId, assistantModel, modelTemperature, modelMaxResponseTokens, editMessage, controller.signal);
-  AssistantMessage(conversationId, assistantMessageId, history, assistantModel, editMessage, controller.signal);
-
-  // clear to send, again
-  startTyping(conversationId, null);
+  socket.emit('userPrompt', {
+    history: historyToServer,
+    modelVersion: assistantModel,
+    conversationId: conversationId,
+    assistantMessageId: assistantMessageId,
+  });
 
   // update text, if needed
   //await updateAutoConversationTitle(conversationId);
@@ -90,16 +91,17 @@ export function Chat(props: { onShowSettings: () => void, sx?: SxProps }) {
   const _findConversation = (conversationId: string) =>
     conversationId ? useChatStore.getState().conversations.find(c => c.id === conversationId) ?? null : null;
 
+  const socket = React.useContext(SocketContext) as Socket;
 
   const handleSendMessage = async (conversationId: string, userText: string) => {
     const conversation = _findConversation(conversationId);
     if (conversation && chatModelId && systemPurposeId)
-      await runAssistantUpdatingState(conversation.id, [...conversation.messages, createDMessage('user', userText)], chatModelId, systemPurposeId);
+      await runAssistantUpdatingState(socket, conversation.id, [...conversation.messages, createDMessage('user', userText)], chatModelId, systemPurposeId);
   };
 
   const handleRestartConversation = async (conversationId: string, history: DMessage[]) => {
     if (conversationId && chatModelId && systemPurposeId)
-      await runAssistantUpdatingState(conversationId, history, chatModelId, systemPurposeId);
+      await runAssistantUpdatingState(socket, conversationId, history, chatModelId, systemPurposeId);
   };
 
 
@@ -118,6 +120,27 @@ export function Chat(props: { onShowSettings: () => void, sx?: SxProps }) {
       conversation && setPublishResponse(await publishConversation('paste.gg', conversation, !useSettingsStore.getState().showSystemMessages));
     }
   };
+
+  React.useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+    console.log("useEffect in Chat.tsx is called");
+    if (socket === null) {
+      return;
+    }
+    const { editMessage } = useChatStore.getState();
+
+    socket.on('serverReceivedPrompt', ({ conversationId, assistantMessageId }) => {
+      console.log(`[ws] Server received prompt for conversation (id=${conversationId})`);
+      editMessage(conversationId, assistantMessageId, { typing: true }, false);
+    });
+
+    socket.on('gptResponse', ({ answer, conversationId, assistantMessageId }) => {
+      console.log(`[ws] Received GPT response for conversation (id=${conversationId}): ${answer}}`);
+      editMessage(conversationId, assistantMessageId, { text: answer, typing: false }, true);
+    });
+  }, []);
 
 
   return (

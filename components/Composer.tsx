@@ -55,24 +55,24 @@ const attachFileLegend =
     </Box>
     <table>
       <tbody>
-      <tr>
-        <td width={36}><PictureAsPdfIcon sx={{ width: 24, height: 24 }} /></td>
-        <td><b>PDF</b></td>
-        <td width={36} align='center' style={{ opacity: 0.5 }}>→</td>
-        <td>📝 Text (split manually)</td>
-      </tr>
-      <tr>
-        <td><DataArrayIcon sx={{ width: 24, height: 24 }} /></td>
-        <td><b>Code</b></td>
-        <td align='center' style={{ opacity: 0.5 }}>→</td>
-        <td>📚 Markdown</td>
-      </tr>
-      <tr>
-        <td><FormatAlignCenterIcon sx={{ width: 24, height: 24 }} /></td>
-        <td><b>Text</b></td>
-        <td align='center' style={{ opacity: 0.5 }}>→</td>
-        <td>📝 As-is</td>
-      </tr>
+        <tr>
+          <td width={36}><PictureAsPdfIcon sx={{ width: 24, height: 24 }} /></td>
+          <td><b>PDF</b></td>
+          <td width={36} align='center' style={{ opacity: 0.5 }}>→</td>
+          <td>📝 Text (split manually)</td>
+        </tr>
+        <tr>
+          <td><DataArrayIcon sx={{ width: 24, height: 24 }} /></td>
+          <td><b>Code</b></td>
+          <td align='center' style={{ opacity: 0.5 }}>→</td>
+          <td>📚 Markdown</td>
+        </tr>
+        <tr>
+          <td><FormatAlignCenterIcon sx={{ width: 24, height: 24 }} /></td>
+          <td><b>Text</b></td>
+          <td align='center' style={{ opacity: 0.5 }}>→</td>
+          <td>📝 As-is</td>
+        </tr>
       </tbody>
     </table>
     <Box sx={{ mt: 1, fontSize: '14px' }}>
@@ -121,7 +121,8 @@ export function Composer(props: {
 
   // external state
   const theme = useTheme();
-  const { history, appendMessageToHistory } = useComposerStore(state => ({ history: state.history, appendMessageToHistory: state.appendMessageToHistory }), shallow);
+  const { history, appendMessageToHistory } = useComposerStore(state => (
+    { history: state.history, appendMessageToHistory: state.appendMessageToHistory }), shallow);
   const stopTyping = useChatStore(state => state.stopTyping);
   const modelMaxResponseTokens = useSettingsStore(state => state.modelMaxResponseTokens);
 
@@ -345,7 +346,7 @@ export function Composer(props: {
               variant='solid' placement='top-start'
               title={attachFileLegend}>
               <Button fullWidth variant='plain' color='neutral' onClick={handleShowFilePicker} startDecorator={<UploadFileIcon />}
-                      sx={{ ...hideOnMobile, justifyContent: 'flex-start' }}>
+                sx={{ ...hideOnMobile, justifyContent: 'flex-start' }}>
                 Attach
               </Button>
             </Tooltip>
@@ -359,7 +360,7 @@ export function Composer(props: {
               variant='solid' placement='top-start'
               title={pasteClipboardLegend}>
               <Button fullWidth variant='plain' color='neutral' startDecorator={<ContentPasteGoIcon />} onClick={handlePasteFromClipboard}
-                      sx={{ ...hideOnMobile, justifyContent: 'flex-start' }}>
+                sx={{ ...hideOnMobile, justifyContent: 'flex-start' }}>
                 {props.isDeveloperMode ? 'Paste code' : 'Paste'}
               </Button>
             </Tooltip>

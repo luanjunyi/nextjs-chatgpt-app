@@ -38,6 +38,11 @@ export default function Home() {
     });
     socket.on("connect", () => {
       console.log("[ws] Connected to the WebSocket server");
+      if (productKey) {
+        socket.emit('validateProductKey', productKey);
+      } else {
+        setSettingsShown(true);
+      }
     });
 
     socket.on("disconnect", () => {
