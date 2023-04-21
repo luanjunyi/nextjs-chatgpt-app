@@ -23,9 +23,14 @@ export default function MyApp({ Component, emotionCache = clientSideEmotionCache
 
   React.useEffect(() => {
     function getWebSocketUrl() {
-      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      let protocol = 'ws:';
+      let port = 2023;
+      if (window.location.protocol === 'https:') {
+        protocol = window.location.protocol = 'wss:';
+        port = 2024;
+      }
       const hostname = window.location.hostname;
-      const port = 2023;
+
       const wsUrl = `${protocol}//${hostname}:${port}`;
       return wsUrl;
     }
