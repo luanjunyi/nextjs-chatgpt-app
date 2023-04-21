@@ -13,4 +13,4 @@ npm run build
 
 echo "=========== Restarting whatgtp-web via pm2 ==========="
 
-sudo pm2 restart whatgpt-web
+pm2 restart whatgpt-web
