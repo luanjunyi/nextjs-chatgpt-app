@@ -7,6 +7,7 @@ import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 
 import { ConfirmationModal } from '@/components/dialogs/ConfirmationModal';
 // import { Link } from '@/components/util/Link';
+import { InlineTextEdit } from '@/components/util/InlineTextEdit';
 import { SystemPurposes } from '@/lib/data';
 import { conversationTitle, MAX_CONVERSATIONS, useChatStore, useConversationIDs } from '@/lib/store-chats';
 
@@ -20,16 +21,21 @@ function ConversationListItem(props: {
   isActive: boolean, isSingle: boolean,
   conversationActivate: (conversationId: string) => void,
   conversationDelete: (e: React.MouseEvent, conversationId: string) => void,
-  conversationEditTitle: (conversationId: string) => void,
+  onClose: () => void,
 }) {
+  const menuRef = React.useRef<HTMLInputElement | null>(null);
+
+  // state
+  const [isEditingTitle, setIsEditingTitle] = React.useState(false);
 
   // bind to conversation
   const conversation = useChatStore(state => {
     const conversation = state.conversations.find(conversation => conversation.id === props.conversationId);
     return conversation && {
       assistantTyping: !!conversation.abortController,
+      setUserTitle: state.setUserTitle,
       chatModelId: conversation.chatModelId,
-      name: conversationTitle(conversation),
+      title: conversationTitle(conversation),
       systemPurposeId: conversation.systemPurposeId,
     };
   }, shallow);
@@ -37,15 +43,27 @@ function ConversationListItem(props: {
   // sanity check: shouldn't happen, but just in case
   if (!conversation) return null;
 
-  const { assistantTyping, name, systemPurposeId } = conversation;
+  const { assistantTyping, title, systemPurposeId, setUserTitle } = conversation;
 
   const textSymbol = SystemPurposes[systemPurposeId]?.symbol || '❓';
 
+  const handleEditBegin = () => setIsEditingTitle(true);
+
+  const handleEdited = (text: string) => {
+    setIsEditingTitle(false);
+    setUserTitle(props.conversationId, text);
+    if (menuRef.current) {
+      menuRef.current.focus();
+    }
+  };
+
   return (
     <MenuItem
+      ref={menuRef}
       variant={props.isActive ? 'solid' : 'plain'} color='neutral'
+      autoFocus={true}
       onClick={() => props.conversationActivate(props.conversationId)}
-      // sx={{ '&:hover > button': { opacity: 1 } }}
+    // sx={{ '&:hover > button': { opacity: 1 } }}
     >
 
       {/* Icon */}
@@ -71,9 +89,17 @@ function ConversationListItem(props: {
       </ListItemDecorator>
 
       {/* Text */}
-      <Box onDoubleClick={() => props.conversationEditTitle(props.conversationId)} sx={{ mr: 2 }}>
-        {DEBUG_CONVERSATION_IDs ? props.conversationId.slice(0, 10) : name}{assistantTyping && '...'}
-      </Box>
+      {!isEditingTitle ? (
+
+        <Box onDoubleClick={handleEditBegin} sx={{ flexGrow: 1 }}>
+          {DEBUG_CONVERSATION_IDs ? props.conversationId.slice(0, 10) : title}{assistantTyping && '...'}
+        </Box>
+
+      ) : (
+
+        <InlineTextEdit initialText={title} onEdit={handleEdited} sx={{ ml: -1.5, mr: -0.5, flexGrow: 1 }} />
+
+      )}
 
       {/* Edit */}
       {/*<IconButton*/}
@@ -109,13 +135,14 @@ export function PagesMenu(props: { pagesMenuAnchor: HTMLElement | null, onClose:
 
   // external state
   const conversationIDs = useConversationIDs();
-  const { activeConversationId, setActiveConversationId, createConversation, deleteConversation, setActiveConversation } = useChatStore(state => ({
-    activeConversationId: state.activeConversationId,
-    setActiveConversationId: state.setActiveConversationId,
-    createConversation: state.createConversation,
-    deleteConversation: state.deleteConversation,
-    setActiveConversation: state.setActiveConversationId,
-  }), shallow);
+  const { activeConversationId, setActiveConversationId, createConversation,
+    deleteConversation, setActiveConversation } = useChatStore(state => ({
+      activeConversationId: state.activeConversationId,
+      setActiveConversationId: state.setActiveConversationId,
+      createConversation: state.createConversation,
+      deleteConversation: state.deleteConversation,
+      setActiveConversation: state.setActiveConversationId,
+    }), shallow);
 
 
   const hasChats = conversationIDs.length > 0;
@@ -126,8 +153,6 @@ export function PagesMenu(props: { pagesMenuAnchor: HTMLElement | null, onClose:
   const handleNew = () => createConversation();
 
   const handleConversationActivate = (conversationId: string) => setActiveConversation(conversationId);
-
-  const handleConversationEditTitle = (conversationId: string) => console.log('edit title', conversationId);
 
   const handleConversationDelete = (e: React.MouseEvent, conversationId: string) => {
     if (!singleChat) {
@@ -184,7 +209,7 @@ export function PagesMenu(props: { pagesMenuAnchor: HTMLElement | null, onClose:
           isSingle={singleChat}
           conversationActivate={handleConversationActivate}
           conversationDelete={handleConversationDelete}
-          conversationEditTitle={handleConversationEditTitle}
+          onClose={props.onClose}
         />)}
 
       <ListDivider />
